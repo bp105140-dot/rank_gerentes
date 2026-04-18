@@ -284,11 +284,7 @@
     <div class="sidebar-wrap" id="sw">
       <div class="sidebar">
         <div class="sidebar-label">Grupos</div>
-        <button class="group-btn active" onclick="setGroup(this,'Ranking · Grupo 1')"><div class="gdot"></div>Grupo 1</button>
-        <button class="group-btn" onclick="setGroup(this,'Ranking · Grupo 2')"><div class="gdot"></div>Grupo 2</button>
-        <button class="group-btn" onclick="setGroup(this,'Ranking · Grupo 3')"><div class="gdot"></div>Grupo 3</button>
-        <button class="group-btn" onclick="setGroup(this,'Ranking · Grupo 4')"><div class="gdot"></div>Grupo 4</button>
-        <button class="group-btn" onclick="setGroup(this,'Ranking · Grupo 5')"><div class="gdot"></div>Grupo 5</button>
+        <!-- botões gerados por renderSidebarGrupos() após carga do Supabase -->
         <div class="sdiv"></div>
         <div class="sidebar-label">Legenda</div>
         <div class="leg-item"><div class="ldot" style="background:#3B9B1A"></div>Desconto ok</div>
@@ -338,14 +334,9 @@
         <div class="config-tab" onclick="switchTab(this,'tab-dados')">Dados</div>
       </div>
       <div id="tab-gerentes" class="config-section active">
-        <div class="group-filter">
+        <div class="group-filter" id="group-filter-wrap">
+          <!-- preenchido dinamicamente por renderGroupFilterButtons() -->
           <button class="gf-btn active" onclick="filterGroup(this,'todos')">Todos</button>
-          <button class="gf-btn" onclick="filterGroup(this,'1')">Grupo 1</button>
-          <button class="gf-btn" onclick="filterGroup(this,'2')">Grupo 2</button>
-          <button class="gf-btn" onclick="filterGroup(this,'3')">Grupo 3</button>
-          <button class="gf-btn" onclick="filterGroup(this,'4')">Grupo 4</button>
-          <button class="gf-btn" onclick="filterGroup(this,'5')">Grupo 5</button>
-
         </div>
         <div class="config-grid" id="config-grid"></div>
         <button class="save-btn" onclick="alert('Gerentes salvos!')">Salvar gerentes</button>
@@ -401,71 +392,11 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
-  const lojas=[
-    {id:1,loja:"03 - MOEMA",grupo:"1",nome:"LABATE",iniciais:"LA"},
-    {id:2,loja:"04 - SANTANA",grupo:"2",nome:"ANDRÉ",iniciais:"AN"},
-    {id:3,loja:"05 - TATUAPE",grupo:"2",nome:"JEFFERSON",iniciais:"JE"},
-    {id:4,loja:"06 - IBIRAPUERA1",grupo:"3",nome:"VERGARA",iniciais:"VE"},
-    {id:5,loja:"07 - PINHEIROS",grupo:"1",nome:"ANDERSON",iniciais:"AN"},
-    {id:6,loja:"08 - INTERLAGOS",grupo:"2",nome:"JONATAS",iniciais:"JO"},
-    {id:7,loja:"09 - SANTO ANDRE",grupo:"5",nome:"VALDIR",iniciais:"VA"},
-    {id:8,loja:"10 - IMIRIM",grupo:"2",nome:"HELAINE",iniciais:"HE"},
-    {id:9,loja:"11 - OSASCO",grupo:"5",nome:"HANNAN",iniciais:"HA"},
-    {id:10,loja:"12 - CASA VERDE",grupo:"2",nome:"MAYARA",iniciais:"MA"},
-    {id:11,loja:"13 - CAMPINAS",grupo:"1",nome:"MICHEL",iniciais:"MI"},
-    {id:12,loja:"14 - MORUMBI",grupo:"3",nome:"VICTOR",iniciais:"VI"},
-    {id:13,loja:"16 - TIMOTEO",grupo:"2",nome:"EDGAR",iniciais:"ED"},
-    {id:14,loja:"17 - BERRINI",grupo:"2",nome:"NATANE",iniciais:"NA"},
-    {id:15,loja:"18 - IPIRANGA",grupo:"5",nome:"FLORIANO",iniciais:"FL"},
-    {id:16,loja:"20 - SANTOS",grupo:"1",nome:"DANIEL",iniciais:"DA"},
-    {id:17,loja:"21 - SAO MIGUEL",grupo:"4",nome:"ELTON",iniciais:"EL"},
-    {id:18,loja:"22 - GUARULHOS2",grupo:"3",nome:"DANIELE",iniciais:"DI"},
-    {id:19,loja:"23 - ITAQUERA",grupo:"5",nome:"RAFAEL",iniciais:"RA"},
-    {id:20,loja:"24 - IBIRAPUERA2",grupo:"2",nome:"BRUNO",iniciais:"BR"},
-    {id:21,loja:"25 - CIDADE DUTRA",grupo:"5",nome:"RAMIRO",iniciais:"RM"},
-    {id:22,loja:"26 - BRIGADEIRO",grupo:"1",nome:"GABRIELA",iniciais:"GA"},
-    {id:23,loja:"27 - SUMARE",grupo:"2",nome:"RODRIGO",iniciais:"RO"},
-    {id:24,loja:"28 - PENHA",grupo:"2",nome:"LEANDRO",iniciais:"LE"},
-    {id:25,loja:"29 - SAO BERNARDO",grupo:"3",nome:"DANILO",iniciais:"DN"},
-    {id:26,loja:"31 - SAO MIGUEL2",grupo:"2",nome:"ANSELMO",iniciais:"AS"},
-    {id:27,loja:"32 - MOOCA",grupo:"1",nome:"JULIANE",iniciais:"JU"},
-    {id:28,loja:"33 - TABOAO",grupo:"3",nome:"WIRLLY",iniciais:"WI"},
-    {id:29,loja:"34 - ITAQUA",grupo:"3",nome:"LUIS",iniciais:"LU"},
-    {id:30,loja:"35 - PIRAJUSSARA",grupo:"4",nome:"GISELLE",iniciais:"GI"},
-    {id:31,loja:"36 - SALIM FARAH MALUF",grupo:"3",nome:"MIRIAM",iniciais:"MI"},
-    {id:32,loja:"37 - CUPECE",grupo:"2",nome:"MARCOS",iniciais:"MC"},
-    {id:33,loja:"38 - INTERLAGOS2",grupo:"5",nome:"SIMONE",iniciais:"SI"},
-    {id:34,loja:"39 - CAMPO LIMPO",grupo:"4",nome:"LANE",iniciais:"LN"},
-    {id:35,loja:"40 - MBOI MIRIM",grupo:"4",nome:"BRUNA",iniciais:"BU"},
-    {id:36,loja:"42 - CARAPICUIBA",grupo:"2",nome:"CAROLINA",iniciais:"CA"},
-    {id:37,loja:"44 - GUAIANASES",grupo:"4",nome:"GOBATTO",iniciais:"GO"},
-    {id:38,loja:"45 - BONSUCESSO",grupo:"2",nome:"MIDIÃ",iniciais:"MD"},
-    {id:39,loja:"47 - PIRITUBA",grupo:"4",nome:"FABIO MATOS",iniciais:"FM"},
-    {id:40,loja:"48 - PIRITUBA2",grupo:"3",nome:"ELIANE",iniciais:"EL"},
-    {id:41,loja:"49 - FRANCO DA ROCHA",grupo:"1",nome:"VITTOR",iniciais:"VT"},
-    {id:42,loja:"50 - BRASILANDIA",grupo:"2",nome:"JEAN",iniciais:"JN"},
-    {id:43,loja:"51 - RAPOSO",grupo:"5",nome:"LUCIANO",iniciais:"LC"},
-    {id:44,loja:"52 - SAUDE",grupo:"1",nome:"TATIANE",iniciais:"TA"},
-    {id:45,loja:"53 - DIADEMA",grupo:"1",nome:"DANTAS",iniciais:"DT"},
-    {id:46,loja:"54 - MAUA",grupo:"3",nome:"SILVIO",iniciais:"SV"},
-    {id:47,loja:"55 - JACANA",grupo:"3",nome:"GLAUCO",iniciais:"GL"},
-    {id:48,loja:"56 - CAMPO LIMPO2",grupo:"3",nome:"MARCILIO",iniciais:"ML"},
-    {id:49,loja:"57 - RUDGE RAMOS",grupo:"2",nome:"FERNANDO",iniciais:"FE"},
-    {id:50,loja:"58 - CRUZEIRO DO SUL",grupo:"1",nome:"MÁRCIO",iniciais:"MR"},
-    {id:51,loja:"59 - ARICANDUVA",grupo:"4",nome:"ELAINE",iniciais:"EN"},
-    {id:52,loja:"60 - SHOPPING DOM PEDRO",grupo:"5",nome:"EDILSON",iniciais:"ED"},
-    {id:53,loja:"61 - VILA MASCOTE",grupo:"1",nome:"EVILASIO",iniciais:"EV"},
-    {id:54,loja:"62 - AUTODROMO",grupo:"1",nome:"RODRIGO",iniciais:"RD"}
-  ];
-  const fotos={};
-  const premios={
-    1:{emoji:"✈️",nome:"Viagem Internacional",desc:"Casal · Destino surpresa · All inclusive",valor:"Grand Prix 🏆"},
-    2:{emoji:"📺",nome:"Smart TV 65\"",desc:"Eletrodoméstico · Entrega em domicílio",valor:"R$ 4.500"},
-    3:{emoji:"💰",nome:"Prêmio em Dinheiro",desc:"Depósito em conta corrente",valor:"R$ 2.000"},
-    4:{emoji:"🎁",nome:"Vale-presente",desc:"Shopping parceiro",valor:"R$ 1.500"},
-    5:{emoji:"🏖️",nome:"Resort Nacional",desc:"Final de semana · All inclusive",valor:"R$ 3.000"},
-
-  };
+  // ─── Dados dinâmicos — populados do Supabase ────────────────────────────────
+  let lojas   = [];   // rank_gerentes: { id, loja, grupo, nome, iniciais }
+  let premios = {};   // rank_premios:  { [grupo]: { emoji, nome, desc, valor } }
+  // ────────────────────────────────────────────────────────────────────────────
+  const fotos = {};
   const emojis=["✈️","🏖️","🏝️","💰","🎁","📺","🎮","🍽️","🏆","🚗","💻","📱","🎯","🥂","🌟"];
 
   let sheetData=[],sheetHeaders=[],fileName="",lastUpdateStr="",currentFilter="todos";
@@ -576,71 +507,90 @@
     return isNaN(n)?null:n;
   }
 
-  // Parser para os valores do CSV de metas (lida com "R$ 120.000,00", "60,0%", "4,00")
+  // ─── Supabase: carrega tudo em paralelo ─────────────────────────────────────
+
+  // Helper: calcula iniciais a partir do nome
+  function calcIniciais(nome){
+    const p=(nome||'').trim().split(/\s+/).filter(Boolean);
+    if(!p.length) return '??';
+    if(p.length===1) return p[0].substring(0,2).toUpperCase();
+    return (p[0][0]+(p[p.length-1][0])).toUpperCase();
+  }
+
+  // Converte valores do CSV armazenados como string no Supabase
+  // Lida com: "R$ 120.000,00" → 120000 | "60,0%" → 0.60 | "4,00" → 4.0
   function parseMetaVal(v){
     if(v===null||v===undefined) return null;
     let s=String(v).trim();
     if(!s) return null;
     const isPct=s.endsWith('%');
     s=s.replace(/R\$\s*/g,'').replace(/%/g,'').trim();
-    // Formato brasileiro: 1.200,00 → remover ponto de milhar, trocar vírgula por ponto
-    if(s.includes(',')){
-      s=s.replace(/\./g,'').replace(',','.');
-    }
+    if(s.includes(',')) s=s.replace(/\./g,'').replace(',','.');
     const n=parseFloat(s);
-    if(isNaN(n)) return null;
-    return isPct ? n/100 : n;
+    return isNaN(n)?null:(isPct?n/100:n);
   }
 
   // Atualiza o card de status do Supabase na aba Dados
-  function updateMetasStatus(state, count, errorMsg){
-    const card=document.getElementById('sb-status-card');
-    const dot =document.getElementById('sb-status-dot');
-    const txt =document.getElementById('sb-status-txt');
-    const sub =document.getElementById('sb-status-sub');
-    if(!card) return;
+  function updateMetasStatus(state,count,errorMsg){
+    const dot=document.getElementById('sb-status-dot');
+    const txt=document.getElementById('sb-status-txt');
+    const sub=document.getElementById('sb-status-sub');
+    if(!dot) return;
     if(state==='loading'){
-      dot.style.background='#f6c85f';
-      txt.textContent='Carregando metas…';
-      sub.textContent='Buscando tabela rank_gerentes';
+      dot.style.background='#f6c85f'; txt.textContent='Carregando…'; sub.textContent='Buscando tabelas do Supabase';
     } else if(state==='ok'){
-      dot.style.background='#3ECF8E';
-      txt.textContent=`Metas carregadas — ${count} lojas`;
-      sub.textContent='Tabela rank_gerentes · Supabase';
+      dot.style.background='#3ECF8E'; txt.textContent=`${count} gerentes · prêmios carregados`; sub.textContent='rank_gerentes + rank_premios · Supabase';
     } else {
-      dot.style.background='#E24B4A';
-      txt.textContent='Erro ao carregar metas';
-      sub.textContent=errorMsg||'Verifique a tabela rank_gerentes';
+      dot.style.background='#E24B4A'; txt.textContent='Erro ao carregar'; sub.textContent=errorMsg||'Verifique as tabelas no Supabase';
     }
   }
 
-  // Busca metas do Supabase e monta supabaseMetas no mesmo formato que sheetToMap() produz
-  async function loadMetasFromSupabase(){
+  async function sbFetch(table){
+    const res=await fetch(`${SUPABASE_URL}/rest/v1/${table}?select=*&limit=2000`,{
+      headers:{'apikey':SUPABASE_KEY,'Authorization':`Bearer ${SUPABASE_KEY}`,'Content-Type':'application/json'}
+    });
+    if(!res.ok){const b=await res.text().catch(()=>'');throw new Error(`${table}: HTTP ${res.status} — ${b}`);}
+    return res.json();
+  }
+
+  async function loadAllFromSupabase(){
     updateMetasStatus('loading');
     try{
-      const res=await fetch(`${SUPABASE_URL}/rest/v1/rank_gerentes?select=*&limit=1000`,{
-        headers:{
-          'apikey':SUPABASE_KEY,
-          'Authorization':`Bearer ${SUPABASE_KEY}`,
-          'Content-Type':'application/json'
-        }
-      });
-      if(!res.ok){const body=await res.text().catch(()=>'');throw new Error(`HTTP ${res.status}: ${body}`);}
-      const data=await res.json();
-      if(!Array.isArray(data)||!data.length) throw new Error('Nenhum registro em rank_gerentes');
+      // Busca as duas tabelas em paralelo
+      const [gerentes, premiosData] = await Promise.all([
+        sbFetch('rank_gerentes'),
+        sbFetch('rank_premios').catch(()=>[])   // premios é opcional — não quebra se não existir
+      ]);
 
+      if(!Array.isArray(gerentes)||!gerentes.length) throw new Error('Nenhum registro em rank_gerentes');
+
+      // ── Popula lojas[] e supabaseMetas{} a partir de rank_gerentes ──────────
+      lojas=[];
       supabaseMetas={};
-      for(const row of data){
-        // Tenta todos os nomes possíveis para cada coluna
-        const get=(...keys)=>{for(const k of keys){if(row[k]!==undefined&&row[k]!==null)return row[k];}return null;};
-        const loja=String(get('loja','Loja','filial','Filial','')||'').trim();
-        if(!loja) continue;
-        supabaseMetas[loja]=[
-          loja,
-          get('Inicio','inicio','data_inicio','Data Inicio'),
-          get('Fim','fim','data_fim','Data Fim'),
+      gerentes.forEach((row,idx)=>{
+        const get=(...keys)=>{for(const k of keys){if(row[k]!==undefined&&row[k]!==null&&row[k]!=='')return row[k];}return null;};
+        const lojaKey=String(get('loja','Loja','filial','Filial')||'').trim();
+        if(!lojaKey) return;
+
+        const nome =String(get('nome','Nome','gerente','Gerente')||'');
+        const grupo=String(get('grupo','Grupo','group','Group')||'');
+
+        // Adiciona à lista de lojas
+        lojas.push({
+          id:idx+1,
+          loja:lojaKey,
+          grupo,
+          nome,
+          iniciais:calcIniciais(nome)
+        });
+
+        // Adiciona às metas (índices compatíveis com sheetToMap output)
+        supabaseMetas[lojaKey]=[
+          lojaKey,
+          get('Inicio','inicio','data_inicio'),
+          get('Fim','fim','data_fim'),
           parseMetaVal(get('Meta','meta')),
-          parseMetaVal(get('Ticket Médio','Ticket Medio','ticket_medio','ticket medio','TicketMedio')),
+          parseMetaVal(get('Ticket Médio','Ticket Medio','ticket_medio','ticket medio','TicketMedio','Ticket_Medio')),
           parseMetaVal(get('Google','google')),
           parseMetaVal(get('P.A','PA','pa','P.a')),
           parseMetaVal(get('Baú','Bau','bau','BAU')),
@@ -649,13 +599,65 @@
           parseMetaVal(get('Protetores','Protetor','protetores','protetor')),
           parseMetaVal(get('desconto','Desconto','DESCONTO')),
         ];
+      });
+
+      // ── Popula premios{} a partir de rank_premios ────────────────────────────
+      premios={};
+      if(Array.isArray(premiosData)&&premiosData.length){
+        premiosData.forEach(row=>{
+          const g=String(row.grupo||row.Grupo||'');
+          if(!g) return;
+          premios[g]={
+            emoji : row.emoji||row.Emoji||'🏆',
+            nome  : row.nome||row.Nome||'Prêmio',
+            desc  : row.descricao||row.Descricao||row.desc||row.Desc||'',
+            valor : row.valor||row.Valor||''
+          };
+        });
       }
-      updateMetasStatus('ok', Object.keys(supabaseMetas).length);
+
+      // Atualiza displays que dependem dos dados
+      renderSidebarGrupos();
+      renderGroupFilterButtons();
+      renderPremiosDisplay();
+      updateMetasStatus('ok', lojas.length);
+
     }catch(err){
-      console.error('[Supabase Metas]',err);
+      console.error('[Supabase]',err);
       updateMetasStatus('error',0,err.message);
     }
   }
+
+  // Renderiza os botões de grupo na sidebar a partir de lojas[]
+  function renderSidebarGrupos(){
+    const sidebar=document.querySelector('.sidebar');
+    if(!sidebar) return;
+    sidebar.querySelectorAll('.group-btn').forEach(b=>b.remove());
+    const label=sidebar.querySelector('.sidebar-label');
+    if(!label) return;
+    const grupos=[...new Set(lojas.map(l=>l.grupo).filter(Boolean))].sort((a,b)=>Number(a)-Number(b));
+    grupos.forEach((g,i)=>{
+      const btn=document.createElement('button');
+      btn.className='group-btn'+(i===0?' active':'');
+      btn.innerHTML=`<div class="gdot"></div>Grupo ${g}`;
+      btn.onclick=()=>{
+        sidebar.querySelectorAll('.group-btn').forEach(b=>b.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById('gtitle').textContent=`Ranking · Grupo ${g}`;
+      };
+      label.after(btn);
+    });
+  }
+
+  // Renderiza os botões de filtro de grupo na aba Configurações
+  function renderGroupFilterButtons(){
+    const wrap=document.getElementById('group-filter-wrap');
+    if(!wrap) return;
+    const grupos=[...new Set(lojas.map(l=>l.grupo).filter(Boolean))].sort((a,b)=>Number(a)-Number(b));
+    wrap.innerHTML=`<button class="gf-btn active" onclick="filterGroup(this,'todos')">Todos</button>`
+      +grupos.map(g=>`<button class="gf-btn" onclick="filterGroup(this,'${g}')">Grupo ${g}</button>`).join('');
+  }
+  // ────────────────────────────────────────────────────────────────────────────
 
   /* ── FULL SCORING ENGINE ── */
   function calcularResultados(wb){
@@ -922,7 +924,9 @@
     document.getElementById("premios-display").innerHTML=Object.entries(premios).map(([g,p])=>`<div class="pc gold"><div class="pc-group">Grupo ${g}</div><div class="pc-icon">${p.emoji}</div><div class="pc-name">${p.nome}</div><div class="pc-div"></div><div class="pc-desc">${p.desc}</div><div class="pc-value">${p.valor}</div></div>`).join("");
   }
   function renderPremiosConfig(){
-    document.getElementById("premio-config-grid").innerHTML=Object.entries(premios).map(([g,p])=>`<div class="premio-config-card"><div class="pc-config-grupo">Grupo ${g}</div><div><div class="pc-field-label">Ícone</div><div class="emoji-row" id="emoji-row-${g}">${emojis.map(e=>`<span class="emoji-opt ${e===p.emoji?"selected":""}" onclick="selEmoji('${g}','${e}',this)">${e}</span>`).join("")}</div></div><div class="pc-div-config"></div><div><div class="pc-field-label">Nome</div><input class="pc-input" type="text" value="${p.nome}" onchange="premios['${g}'].nome=this.value"/></div><div><div class="pc-field-label">Descrição</div><input class="pc-input" type="text" value="${p.desc}" onchange="premios['${g}'].desc=this.value"/></div><div><div class="pc-field-label">Valor</div><input class="pc-input" type="text" value="${p.valor}" onchange="premios['${g}'].valor=this.value"/></div></div>`).join("");
+    const grupos=Object.keys(premios).sort((a,b)=>Number(a)-Number(b));
+    if(!grupos.length){document.getElementById("premio-config-grid").innerHTML='<p style="color:#aaa;font-size:13px;">Nenhum prêmio carregado do Supabase. Crie registros na tabela rank_premios.</p>';return;}
+    document.getElementById("premio-config-grid").innerHTML=grupos.map(g=>{const p=premios[g];return `<div class="premio-config-card"><div class="pc-config-grupo">Grupo ${g}</div><div><div class="pc-field-label">Ícone</div><div class="emoji-row" id="emoji-row-${g}">${emojis.map(e=>`<span class="emoji-opt ${e===p.emoji?"selected":""}" onclick="selEmoji('${g}','${e}',this)">${e}</span>`).join("")}</div></div><div class="pc-div-config"></div><div><div class="pc-field-label">Nome</div><input class="pc-input" type="text" value="${p.nome}" onchange="premios['${g}'].nome=this.value"/></div><div><div class="pc-field-label">Descrição</div><input class="pc-input" type="text" value="${p.desc||''}" onchange="premios['${g}'].desc=this.value"/></div><div><div class="pc-field-label">Valor</div><input class="pc-input" type="text" value="${p.valor||''}" onchange="premios['${g}'].valor=this.value"/></div></div>`;}).join("");
   }
   function selEmoji(g,e,el){premios[g].emoji=e;document.querySelectorAll(`#emoji-row-${g} .emoji-opt`).forEach(x=>x.classList.remove("selected"));el.classList.add("selected");}
   function savePremios(){renderPremiosDisplay();alert("Prêmios salvos!");}
@@ -930,7 +934,10 @@
   /* GERENTES */
   function renderConfig(f){
     const lista=f==="todos"?lojas:lojas.filter(l=>l.grupo===f);
-    document.getElementById("config-grid").innerHTML=lista.map(l=>`
+    document.getElementById("config-grid").innerHTML=lista.map(l=>{
+      const grupos=[...new Set(lojas.map(x=>x.grupo).filter(Boolean))].sort((a,b)=>Number(a)-Number(b));
+      const optsGrupo=grupos.map(g=>`<option value="${g}" ${l.grupo===g?"selected":""}>${g}</option>`).join('');
+      return `
       <div class="config-card">
         <div class="config-av" onclick="triggerUpload(${l.id})">
           ${fotos[l.id]?`<img src="${fotos[l.id]}" alt="">`:`<span>${l.iniciais}</span>`}
@@ -938,22 +945,17 @@
         </div>
         <div class="config-info">
           <div class="config-loja">${l.loja}</div>
-          <input class="config-name-input" type="text" value="${l.nome}" placeholder="Nome do gerente" onchange="lojas.find(x=>x.id===${l.id}).nome=this.value;lojas.find(x=>x.id===${l.id}).iniciais=this.value.trim().split(' ').filter((_,i,a)=>i===0||i===a.length-1).map(p=>p[0].toUpperCase()).join('')"/>
+          <input class="config-name-input" type="text" value="${l.nome}" placeholder="Nome do gerente" onchange="lojas.find(x=>x.id===${l.id}).nome=this.value;lojas.find(x=>x.id===${l.id}).iniciais=calcIniciais(this.value)"/>
           <div style="display:flex;align-items:center;gap:8px;margin-top:6px;">
             <span style="font-size:10px;font-weight:700;color:#bbb;letter-spacing:1px;text-transform:uppercase;">Grupo</span>
-            <select class="config-grupo-select" onchange="lojas.find(x=>x.id===${l.id}).grupo=this.value;renderGroupFilter()">
+            <select class="config-grupo-select" onchange="lojas.find(x=>x.id===${l.id}).grupo=this.value;renderGroupFilterButtons()">
               <option value="" ${!l.grupo?"selected":""}>— selecione —</option>
-              <option value="1" ${l.grupo==="1"?"selected":""}>Grupo 1</option>
-              <option value="2" ${l.grupo==="2"?"selected":""}>Grupo 2</option>
-              <option value="3" ${l.grupo==="3"?"selected":""}>Grupo 3</option>
-              <option value="4" ${l.grupo==="4"?"selected":""}>Grupo 4</option>
-              <option value="5" ${l.grupo==="5"?"selected":""}>Grupo 5</option>
-
+              ${optsGrupo}
             </select>
           </div>
         </div>
         <input type="file" accept="image/*" class="config-file-input" id="file-${l.id}" onchange="handlePhoto(${l.id},this)">
-      </div>`).join("");
+      </div>`}).join("");
   }
   function triggerUpload(id){document.getElementById("file-"+id).click();}
   function handlePhoto(id,input){if(!input.files||!input.files[0])return;const r=new FileReader();r.onload=e=>{fotos[id]=e.target.result;renderConfig(currentFilter);};r.readAsDataURL(input.files[0]);}
@@ -996,8 +998,8 @@
 
   renderPremiosDisplay();
 
-  // Carrega metas do Supabase automaticamente ao abrir
-  loadMetasFromSupabase();
+  // Carrega tudo do Supabase ao abrir a página
+  loadAllFromSupabase();
 
   /* ── TOOLTIP DE PONTOS EXTRAS ── */
   const ksTooltip = document.getElementById('ks-tooltip');
