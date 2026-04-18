@@ -461,6 +461,21 @@ function calcularResultados(wb){
 }
 
 
+
+// ─── Toast global ─────────────────────────────────────────────────────────────
+let toastTimer;
+function toast(msg, type) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.style.display = 'block';
+  el.style.opacity = '1';
+  if (type === 'ok')   { el.style.background='#0A0A0A'; el.style.color='#C9A84C'; el.style.border='1px solid #C9A84C'; }
+  if (type === 'err')  { el.style.background='#fff'; el.style.color='#C03030'; el.style.border='1px solid rgba(226,75,74,.4)'; }
+  if (type === 'info') { el.style.background='#0A0A0A'; el.style.color='#fff'; el.style.border='1px solid #333'; }
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { el.style.opacity='0'; setTimeout(()=>el.style.display='none',300); }, type==='err'?6000:3000);
+}
+
 // ─── Senha configurações ──────────────────────────────────────────────────────
 let configUnlocked = false;
 const CONFIG_PWD = 'kingstar';
@@ -545,53 +560,64 @@ function dbRowToResultado(row){
 }
 
 async function saveToSupabase(resultados){
+  toast('Salvando no Supabase…','info');
   try{
-    // Detecta periodo a partir da planilha
+    // Detecta período a partir da planilha
     let inicio=null,fim=null;
     const vs=workbook.Sheets[workbook.SheetNames.find(n=>n.toLowerCase().includes('venda')&&!n.toLowerCase().includes('proj'))||''];
     if(vs){
-      const rows=XLSX.utils.sheet_to_json(vs,{header:1,defval:null});
-      if(rows.length>1){inicio=excelDateToISO(rows[1][1]);fim=excelDateToISO(rows[1][2]);}
+      const rows2=XLSX.utils.sheet_to_json(vs,{header:1,defval:null});
+      if(rows2.length>1){inicio=excelDateToISO(rows2[1][1]);fim=excelDateToISO(rows2[1][2]);}
     }
     if(!inicio)inicio=new Date().toISOString().substring(0,10);
     if(!fim)fim=inicio;
 
     const d=new Date(inicio+'T12:00:00');
-    const nome=d.toLocaleString('pt-BR',{month:'long',year:'numeric'}).replace(/^\w/,c=>c.toUpperCase());
+    const nome=d.toLocaleString('pt-BR',{month:'long',year:'numeric'}).replace(/^./,c=>c.toUpperCase());
 
-    // Upsert período
+    // 1. Marca todos os períodos como inativo primeiro
+    await db.from('ks_periodos').update({ativo:false}).neq('id',0);
+
+    // 2. Upsert período (ativo=true)
     const{data:periodo,error:pe}=await db.from('ks_periodos')
       .upsert({nome,inicio,fim,ativo:true},{onConflict:'nome'})
       .select().single();
-    if(pe)throw pe;
+    if(pe)throw new Error('Período: '+pe.message);
 
-    // Loja ID map
-    const{data:lojasDB}=await db.from('ks_lojas').select('id,codigo_loja');
+    // 3. Busca IDs das lojas
+    const{data:lojasDB,error:le}=await db.from('ks_lojas').select('id,codigo_loja');
+    if(le)throw new Error('Lojas: '+le.message);
     const lojaMap={};
     (lojasDB||[]).forEach(l=>{lojaMap[normLoja(l.codigo_loja)]=l.id;});
 
-    // Resultados
+    // 4. Monta linhas de resultado
     const rows=resultados.map(r=>{
       const loja_id=lojaMap[normLoja(r.loja)];
-      if(!loja_id)return null;
+      if(!loja_id){console.warn('Loja não encontrada no banco:',r.loja);return null;}
       return{
         periodo_id:periodo.id,loja_id,
-        ind_meta:r.ind['Meta'].ok,ind_pa:r.ind['P.A'].ok,ind_ticket:r.ind['Ticket'].ok,ind_google:r.ind['Google'].ok,
-        ind_bau:r.ind['Baú'].ok,ind_cabeceira:r.ind['Cabeceira'].ok,ind_protetor:r.ind['Protetor'].ok,
-        ind_travesseiro:r.ind['Travesseiro'].ok,ind_desconto:r.ind['Desconto'].ok,ind_avista:r.ind['À vista'].ok,
+        ind_meta:!!r.ind['Meta']?.ok,ind_pa:!!r.ind['P.A']?.ok,ind_ticket:!!r.ind['Ticket']?.ok,
+        ind_google:!!r.ind['Google']?.ok,ind_bau:!!r.ind['Baú']?.ok,ind_cabeceira:!!r.ind['Cabeceira']?.ok,
+        ind_protetor:!!r.ind['Protetor']?.ok,ind_travesseiro:!!r.ind['Travesseiro']?.ok,
+        ind_desconto:!!r.ind['Desconto']?.ok,ind_avista:!!r.ind['À vista']?.ok,
         pontos_base:r.pontosBase,pontos_extras:r.pontosExtras,pontos_total:r.total,
         em_risco:r.emRisco,meta_pct:r.meta_pct,extras_info:r.extrasInfo,
       };
     }).filter(Boolean);
 
+    if(!rows.length)throw new Error('Nenhuma loja do resultado encontrada no banco. Verifique os nomes das lojas.');
+
+    // 5. Salva resultados
     const{error:re}=await db.from('ks_resultados').upsert(rows,{onConflict:'periodo_id,loja_id'});
-    if(re)throw re;
+    if(re)throw new Error('Resultados: '+re.message);
 
     updatePeriodoDisplay(periodo);
-    statusMsg('status-upload','ok',`✓ Salvo no Supabase — ${rows.length} lojas · ${nome}`);
+    document.getElementById('last-update').textContent=`${nome} · Top 7 por grupo`;
+    toast(`✓ Salvo — ${rows.length} lojas · ${nome}`,'ok');
   }catch(e){
     console.error('[saveToSupabase]',e);
-    statusMsg('status-upload','err','Erro ao salvar no Supabase: '+e.message);
+    toast('Erro ao salvar: '+e.message,'err');
+    alert('Erro ao salvar no Supabase:\n\n'+e.message+'\n\nAbra o console (F12) para mais detalhes.');
   }
 }
 
@@ -642,18 +668,15 @@ function processFile(file){
   statusMsg('status-upload','info','Processando planilha…');
   const ext=file.name.split('.').pop().toLowerCase();
   const reader=new FileReader();
-  reader.onload=function(e){
+  reader.onload=async function(e){
     workbook=XLSX.read(e.target.result,{type:'array',cellDates:false});
     const resultados=calcularResultados(workbook);
     if(!resultados.length){statusMsg('status-upload','err','Nenhuma loja encontrada. Verifique se os nomes batem com o cadastro.');return;}
     currentResultados=resultados;
     renderRanking(resultados);
-    statusMsg('status-upload','ok',`Planilha processada: ${resultados.length} lojas em ${[...new Set(resultados.map(r=>r.grupo))].length} grupos. Salvando…`);
     showPageRail('rank');
-    // Salva no Supabase em background
-    saveToSupabase(resultados);
-    const el=document.getElementById('last-update');
-    if(el)el.textContent=`Importado agora · Top 7 por grupo`;
+    // Salva no Supabase (aguarda e mostra resultado)
+    await saveToSupabase(resultados);
   };
   reader.readAsArrayBuffer(file);
 }
@@ -783,6 +806,10 @@ function statusMsg(id,type,msg){const el=document.getElementById(id);if(!el)retu
 // ─── Inicializa ───────────────────────────────────────────────────────────────
 initApp();
 </script>
+
+
+<!-- Toast global -->
+<div id="toast" style="display:none;position:fixed;bottom:28px;left:50%;transform:translateX(-50%);z-index:9000;padding:12px 24px;border-radius:10px;font-size:13px;font-weight:700;font-family:'Arial Narrow','Helvetica Neue',Arial,sans-serif;box-shadow:0 8px 32px rgba(0,0,0,0.18);transition:opacity .3s;white-space:nowrap;"></div>
 
 <!-- Modal de senha config -->
 <div id="pwd-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:500;align-items:center;justify-content:center;">
