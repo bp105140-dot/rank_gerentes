@@ -575,14 +575,25 @@ async function saveToSupabase(resultados){
     const d=new Date(inicio+'T12:00:00');
     const nome=d.toLocaleString('pt-BR',{month:'long',year:'numeric'}).replace(/^./,c=>c.toUpperCase());
 
-    // 1. Marca todos os períodos como inativo primeiro
-    await db.from('ks_periodos').update({ativo:false}).neq('id',0);
+    // 1. Desativa todos os períodos ativos
+    await db.from('ks_periodos').update({ativo:false}).eq('ativo',true);
 
-    // 2. Upsert período (ativo=true)
-    const{data:periodo,error:pe}=await db.from('ks_periodos')
-      .upsert({nome,inicio,fim,ativo:true},{onConflict:'nome'})
-      .select().single();
-    if(pe)throw new Error('Período: '+pe.message);
+    // 2. Busca se já existe período com esse nome
+    const{data:existente}=await db.from('ks_periodos').select('id').eq('nome',nome).maybeSingle();
+    let periodo,periodoErr;
+    if(existente){
+      // Já existe — atualiza
+      ({data:periodo,error:periodoErr}=await db.from('ks_periodos')
+        .update({inicio,fim,ativo:true})
+        .eq('id',existente.id)
+        .select().single());
+    }else{
+      // Novo período — insere
+      ({data:periodo,error:periodoErr}=await db.from('ks_periodos')
+        .insert({nome,inicio,fim,ativo:true})
+        .select().single());
+    }
+    if(periodoErr)throw new Error('Período: '+periodoErr.message);
 
     // 3. Busca IDs das lojas
     const{data:lojasDB,error:le}=await db.from('ks_lojas').select('id,codigo_loja');
