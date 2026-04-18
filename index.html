@@ -356,20 +356,23 @@
       </div>
       <div id="tab-dados" class="config-section">
         <div class="dados-wrap">
+          <!-- Card de status das metas (Supabase) -->
+          <div id="sb-status-card" style="display:flex;align-items:center;gap:14px;padding:16px 20px;background:#fff;border:1px solid #E8E4DC;border-radius:12px;margin-bottom:18px;">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#3ECF8E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3S3 13.66 3 12"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+            <div style="flex:1;">
+              <div style="display:flex;align-items:center;gap:8px;">
+                <div id="sb-status-dot" style="width:8px;height:8px;border-radius:50%;background:#bbb;flex-shrink:0;"></div>
+                <span id="sb-status-txt" style="font-size:13px;font-weight:900;color:#111;">Aguardando…</span>
+              </div>
+              <div id="sb-status-sub" style="font-size:11px;color:#aaa;margin-top:2px;margin-left:16px;">Tabela rank_gerentes · Supabase</div>
+            </div>
+            <button onclick="loadMetasFromSupabase()" style="padding:8px 16px;background:#0A0A0A;color:#3ECF8E;border:none;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:0.5px;flex-shrink:0;" onmouseover="this.style.background='#3ECF8E';this.style.color='#0A0A0A'" onmouseout="this.style.background='#0A0A0A';this.style.color='#3ECF8E'">Recarregar metas</button>
+          </div>
           <div class="upload-zone" id="upload-zone" onclick="document.getElementById('planilha-input').click()" ondragover="dragOver(event)" ondragleave="dragLeave(event)" ondrop="dropFile(event)">
             <div class="upload-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></div>
             <div class="upload-title">Importar planilha de resultados</div>
             <div class="upload-sub">Arraste o arquivo aqui ou clique para selecionar<br>Formatos aceitos: <strong>.xlsx · .xls · .csv</strong></div>
             <button class="upload-btn" onclick="event.stopPropagation();document.getElementById('planilha-input').click()">Selecionar arquivo</button>
-          </div>
-          <!-- Supabase loader -->
-          <div style="display:flex;align-items:center;gap:14px;margin:-12px 0 20px;padding:16px 20px;background:#fff;border:1px solid #E8E4DC;border-radius:12px;">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#3ECF8E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3S3 13.66 3 12"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
-            <div style="flex:1;">
-              <div style="font-size:13px;font-weight:900;color:#111;">Carregar do Supabase</div>
-              <div id="supabase-status" style="font-size:11px;color:#aaa;margin-top:2px;">Tabela: rank_gerentes</div>
-            </div>
-            <button id="supabase-btn" onclick="loadFromSupabase()" style="padding:9px 20px;background:#0A0A0A;color:#3ECF8E;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;letter-spacing:0.5px;transition:background 0.15s;" onmouseover="this.style.background='#3ECF8E';this.style.color='#0A0A0A'" onmouseout="this.style.background='#0A0A0A';this.style.color='#3ECF8E'">Carregar</button>
           </div>
           <input type="file" id="planilha-input" class="hidden-file" accept=".xlsx,.xls,.csv" onchange="handleFile(this)">
           <div id="dados-loaded" style="display:none;">
@@ -465,11 +468,6 @@
   };
   const emojis=["✈️","🏖️","🏝️","💰","🎁","📺","🎮","🍽️","🏆","🚗","💻","📱","🎯","🥂","🌟"];
 
-  // ─── Supabase config (mesmo token do painel de metas) ──────────────────────
-  const SUPABASE_URL = 'https://emboolpdpuwugdvypqkk.supabase.co';
-  const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVtYm9vbHBkcHV3dWdkdnlwcWtrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ5MDQyMjUsImV4cCI6MjA5MDQ4MDIyNX0.7Y4b23q-0cdw7oVxmYnPoQNHdnHHEmVdyjCRDKqrd3s';
-  // ───────────────────────────────────────────────────────────────────────────
-
   let sheetData=[],sheetHeaders=[],fileName="",lastUpdateStr="",currentFilter="todos";
   const colMap={loja:"",grupo:"",meta:"",pa:"",ticket:"",google:"",bau:"",cabeceira:"",protetor:"",travesseiro:"",desconto:"",avista:""};
 
@@ -518,6 +516,14 @@
   }
   /* ── MULTI-SHEET WORKBOOK ── */
   let workbook = null;
+
+  // ─── Supabase config (mesmo token do painel de metas) ──────────────────────
+  const SUPABASE_URL = 'https://emboolpdpuwugdvypqkk.supabase.co';
+  const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVtYm9vbHBkcHV3dWdkdnlwcWtrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ5MDQyMjUsImV4cCI6MjA5MDQ4MDIyNX0.7Y4b23q-0cdw7oVxmYnPoQNHdnHHEmVdyjCRDKqrd3s';
+  // Metas carregadas do Supabase — chave: nome normalizado da loja
+  // Formato de cada row: [loja, inicio, fim, meta, ticket, google, pa, bau, cabeceiras, travesseiro, protetores, desconto]
+  let supabaseMetas = {};
+  // ───────────────────────────────────────────────────────────────────────────
 
   function processFile(file){
     fileName=file.name;
@@ -570,161 +576,86 @@
     return isNaN(n)?null:n;
   }
 
-  /* ── SUPABASE LOAD ─────────────────────────────────────────────────────── */
-  async function loadFromSupabase(){
-    const btn=document.getElementById('supabase-btn');
-    const status=document.getElementById('supabase-status');
-    if(btn){btn.disabled=true;btn.textContent='Carregando…';}
-    if(status) status.textContent='Buscando dados…';
+  // Parser para os valores do CSV de metas (lida com "R$ 120.000,00", "60,0%", "4,00")
+  function parseMetaVal(v){
+    if(v===null||v===undefined) return null;
+    let s=String(v).trim();
+    if(!s) return null;
+    const isPct=s.endsWith('%');
+    s=s.replace(/R\$\s*/g,'').replace(/%/g,'').trim();
+    // Formato brasileiro: 1.200,00 → remover ponto de milhar, trocar vírgula por ponto
+    if(s.includes(',')){
+      s=s.replace(/\./g,'').replace(',','.');
+    }
+    const n=parseFloat(s);
+    if(isNaN(n)) return null;
+    return isPct ? n/100 : n;
+  }
 
+  // Atualiza o card de status do Supabase na aba Dados
+  function updateMetasStatus(state, count, errorMsg){
+    const card=document.getElementById('sb-status-card');
+    const dot =document.getElementById('sb-status-dot');
+    const txt =document.getElementById('sb-status-txt');
+    const sub =document.getElementById('sb-status-sub');
+    if(!card) return;
+    if(state==='loading'){
+      dot.style.background='#f6c85f';
+      txt.textContent='Carregando metas…';
+      sub.textContent='Buscando tabela rank_gerentes';
+    } else if(state==='ok'){
+      dot.style.background='#3ECF8E';
+      txt.textContent=`Metas carregadas — ${count} lojas`;
+      sub.textContent='Tabela rank_gerentes · Supabase';
+    } else {
+      dot.style.background='#E24B4A';
+      txt.textContent='Erro ao carregar metas';
+      sub.textContent=errorMsg||'Verifique a tabela rank_gerentes';
+    }
+  }
+
+  // Busca metas do Supabase e monta supabaseMetas no mesmo formato que sheetToMap() produz
+  async function loadMetasFromSupabase(){
+    updateMetasStatus('loading');
     try{
-      const res=await fetch(`${SUPABASE_URL}/rest/v1/rank_gerentes?select=*&limit=2000`,{
+      const res=await fetch(`${SUPABASE_URL}/rest/v1/rank_gerentes?select=*&limit=1000`,{
         headers:{
           'apikey':SUPABASE_KEY,
           'Authorization':`Bearer ${SUPABASE_KEY}`,
           'Content-Type':'application/json'
         }
       });
-      if(!res.ok){
-        const body=await res.text().catch(()=>'');
-        throw new Error(`HTTP ${res.status}: ${body}`);
-      }
+      if(!res.ok){const body=await res.text().catch(()=>'');throw new Error(`HTTP ${res.status}: ${body}`);}
       const data=await res.json();
-      if(!Array.isArray(data)||!data.length) throw new Error('Nenhum dado encontrado na tabela rank_gerentes.');
+      if(!Array.isArray(data)||!data.length) throw new Error('Nenhum registro em rank_gerentes');
 
-      const resultados=calcularResultadosFlat(data);
-      if(!resultados.length) throw new Error('Nenhum resultado calculado. Verifique as colunas da tabela rank_gerentes.');
-
-      renderRanking(resultados);
-      setLastUpdate();
-      showPageRail('rank');
-      if(status) status.textContent=`✓ ${resultados.length} gerentes carregados`;
-      if(btn){btn.disabled=false;btn.textContent='Recarregar';}
+      supabaseMetas={};
+      for(const row of data){
+        // Tenta todos os nomes possíveis para cada coluna
+        const get=(...keys)=>{for(const k of keys){if(row[k]!==undefined&&row[k]!==null)return row[k];}return null;};
+        const loja=String(get('loja','Loja','filial','Filial','')||'').trim();
+        if(!loja) continue;
+        supabaseMetas[loja]=[
+          loja,
+          get('Inicio','inicio','data_inicio','Data Inicio'),
+          get('Fim','fim','data_fim','Data Fim'),
+          parseMetaVal(get('Meta','meta')),
+          parseMetaVal(get('Ticket Médio','Ticket Medio','ticket_medio','ticket medio','TicketMedio')),
+          parseMetaVal(get('Google','google')),
+          parseMetaVal(get('P.A','PA','pa','P.a')),
+          parseMetaVal(get('Baú','Bau','bau','BAU')),
+          parseMetaVal(get('Cabeceiras','Cabeceira','cabeceiras','cabeceira')),
+          parseMetaVal(get('Travesseiro','travesseiro')),
+          parseMetaVal(get('Protetores','Protetor','protetores','protetor')),
+          parseMetaVal(get('desconto','Desconto','DESCONTO')),
+        ];
+      }
+      updateMetasStatus('ok', Object.keys(supabaseMetas).length);
     }catch(err){
-      console.error('[Supabase]',err);
-      if(status) status.style.color='#E24B4A';
-      if(status) status.textContent='Erro: '+err.message;
-      if(btn){btn.disabled=false;btn.textContent='Tentar novamente';}
+      console.error('[Supabase Metas]',err);
+      updateMetasStatus('error',0,err.message);
     }
   }
-
-  /* ── ENGINE DE PONTUAÇÃO PARA DADOS PLANOS (tabela única) ─────────────── */
-  /*
-   * Aliases aceitos (case-insensitive, busca substring):
-   *   loja/filial  |  grupo  |  nome/gerente
-   *   meta_pct / meta (%)
-   *   pa_pct / pa / p.a
-   *   ticket_pct / ticket / tm
-   *   google_pct / google
-   *   bau_pct / bau / baú
-   *   cabeceira_pct / cabeceira
-   *   protetor_pct / protetor
-   *   travesseiro_pct / travesseiro / trav
-   *   desconto_pct / desconto / desc  (invertido: ok se ≤ limite)
-   *   desconto_limite / limite_desc / mt_desc (opcional)
-   *   avista_pct / avista / a_vista   (ok se > 0)
-   */
-  function getCol(row, aliases){
-    for(const a of aliases){
-      for(const k of Object.keys(row)){
-        if(k.toLowerCase().replace(/[^a-z0-9]/g,'').includes(a.toLowerCase().replace(/[^a-z0-9]/g,''))){
-          const v=numVal(row[k]);
-          if(v!==null) return v;
-        }
-      }
-    }
-    return null;
-  }
-
-  function calcularResultadosFlat(rows){
-    const resultados=[];
-
-    for(const row of rows){
-      const lojaKey=String(row.loja||row.filial||row.store||row.codigo||'').trim();
-      if(!lojaKey) continue;
-
-      // Match com a lista de lojas cadastradas
-      const lojaConfig=lojas.find(l=>{
-        const nl=normLoja(l.loja).toUpperCase();
-        const nk=normLoja(lojaKey).toUpperCase();
-        const prefixNL=nl.split(/[-\s]/)[0];
-        const prefixNK=nk.split(/[-\s]/)[0];
-        return nl===nk||prefixNL===prefixNK||nl.includes(nk)||nk.includes(nl);
-      });
-
-      const grupo=String(row.grupo||row.group||lojaConfig?.grupo||'');
-      const nome =String(row.nome||row.gerente||row.manager||row.name||lojaConfig?.nome||lojaKey);
-      const foto =lojaConfig?fotos[lojaConfig.id]:null;
-      const inic =lojaConfig?.iniciais||nome.trim().split(/\s+/).filter((_,i,a)=>i===0||i===a.length-1).map(p=>p[0]?.toUpperCase()||'').join('');
-
-      // Indicadores como % (100 = atingiu meta)
-      const meta_pct   =getCol(row,['meta_pct','meta_perc','pct_meta','metapct','meta%','meta']);
-      const pa_pct     =getCol(row,['pa_pct','papct','pa_perc','pct_pa','pa%','pa','p.a']);
-      const ticket_pct =getCol(row,['ticket_pct','ticketpct','ticket_perc','pct_ticket','ticket%','ticket','tm']);
-      const google_pct =getCol(row,['google_pct','googlepct','google_perc','pct_google','google%','google']);
-      const bau_pct    =getCol(row,['bau_pct','baupct','bau_perc','pct_bau','bau%','bau','baú']);
-      const cab_pct    =getCol(row,['cabeceira_pct','cabpct','cab_perc','pct_cab','cabeceira%','cabeceira','cab']);
-      const prot_pct   =getCol(row,['protetor_pct','protpct','prot_perc','pct_prot','protetor%','protetor','prot']);
-      const trav_pct   =getCol(row,['travesseiro_pct','travpct','trav_perc','pct_trav','travesseiro%','travesseiro','trav']);
-      const desc_val   =getCol(row,['desconto_pct','descpct','desc_perc','pct_desc','desconto%','desconto','desc']);
-      const desc_lim   =getCol(row,['desconto_limite','limite_desc','mt_desc','meta_desc','desc_limite','desclimite']);
-      const avista_val =getCol(row,['avista_pct','avistapct','avista_perc','a_vista_pct','avista%','avista','avista','a_vista']);
-
-      // Avaliar cada indicador
-      const ind={};
-      ind['Meta']        ={val:meta_pct,  ok:meta_pct!=null&&meta_pct>=100,     inv:false};
-      ind['P.A']         ={val:pa_pct,    ok:pa_pct!=null&&pa_pct>=100,         inv:false};
-      ind['Ticket']      ={val:ticket_pct,ok:ticket_pct!=null&&ticket_pct>=100, inv:false};
-      ind['Google']      ={val:google_pct,ok:google_pct!=null&&google_pct>=100, inv:false};
-      ind['Baú']         ={val:bau_pct,   ok:bau_pct!=null&&bau_pct>=100,       inv:false};
-      ind['Cabeceira']   ={val:cab_pct,   ok:cab_pct!=null&&cab_pct>=100,       inv:false};
-      ind['Protetor']    ={val:prot_pct,  ok:prot_pct!=null&&prot_pct>=100,     inv:false};
-      ind['Travesseiro'] ={val:trav_pct,  ok:trav_pct!=null&&trav_pct>=100,     inv:false};
-      // Desconto: ok se ≤ limite (ou se não há limite, ok se valor existe e positivo)
-      const desc_ok=desc_val!=null&&(desc_lim!=null?desc_val<=desc_lim:desc_val>0);
-      ind['Desconto']    ={val:desc_val,  ok:desc_ok,                           inv:true};
-      // À vista: ok se > 0 (crescimento)
-      const av_ok=avista_val!=null&&avista_val>0;
-      ind['À vista']     ={val:avista_val,ok:av_ok,                             inv:false};
-
-      const pontosBase=Object.values(ind).filter(i=>i.ok).length;
-      const emRisco=!desc_ok&&desc_val!=null;
-
-      // Pontos extras por meta acima de 100%
-      let pontosExtras=0;
-      const extrasInfo=[];
-      if(pontosBase>=5&&meta_pct!=null&&meta_pct>100){
-        const ext=Math.floor((meta_pct-100)/5);
-        if(ext>0){
-          pontosExtras+=ext;
-          extrasInfo.push({ind:`Meta mensal em ${meta_pct.toFixed(1)}%`,pct:`+${ext} extra${ext>1?'s':''}`});
-        }
-      }
-
-      resultados.push({loja:lojaKey,nome,inic,foto,grupo,ind,pontosBase,pontosExtras,extrasInfo,total:pontosBase+pontosExtras,emRisco,meta_pct});
-    }
-
-    // Bônus Top 1 por indicador por grupo
-    const grupos=['1','2','3','4','5'];
-    const indKeys=['Meta','Ticket','Google','P.A','Baú','Cabeceira','Travesseiro','Protetor','À vista'];
-    for(const g of grupos){
-      const grp=resultados.filter(r=>r.grupo===g&&r.pontosBase>=5);
-      for(const ik of indKeys){
-        const elegivel=grp.filter(r=>r.ind[ik]&&r.ind[ik].val!=null&&r.ind[ik].ok);
-        if(!elegivel.length) continue;
-        const best=elegivel.reduce((a,b)=>(b.ind[ik].val>a.ind[ik].val?b:a));
-        const tied=elegivel.filter(r=>r.ind[ik].val===best.ind[ik].val);
-        if(tied.length===1){
-          best.pontosExtras+=1;
-          best.total+=1;
-          best.extrasInfo.push({ind:`Top 1 ${ik} no Grupo ${g}`,pct:'+1 bônus'});
-        }
-      }
-    }
-
-    return resultados;
-  }
-  /* ───────────────────────────────────────────────────────────────────────── */
 
   /* ── FULL SCORING ENGINE ── */
   function calcularResultados(wb){
@@ -735,7 +666,6 @@
       google:    wb.Sheets[wb.SheetNames.find(n=>n.toLowerCase().includes('goog'))||'Google'],
       projecao:  wb.Sheets[wb.SheetNames.find(n=>n.toLowerCase().includes('proje'))||'Projeção de venda'],
       avista:    wb.Sheets[wb.SheetNames.find(n=>n.toLowerCase().includes('vista'))||'Pagamento a vista'],
-      metas:     wb.Sheets[wb.SheetNames.find(n=>n.toLowerCase().includes('meta'))||'Metas'],
     };
 
     const vendas   = sheetToMap(SHEETS.vendas);
@@ -744,7 +674,13 @@
     const google   = sheetToMap(SHEETS.google);
     const projecao = sheetToMap(SHEETS.projecao);
     const avista   = sheetToMap(SHEETS.avista);
-    const metas    = sheetToMap(SHEETS.metas);
+
+    // Usa metas do Supabase se carregadas, senão tenta ler do próprio xlsx
+    let metas = supabaseMetas;
+    if(!Object.keys(metas).length){
+      const metaSheet=wb.Sheets[wb.SheetNames.find(n=>n.toLowerCase().includes('meta'))||'Metas'];
+      metas = metaSheet ? sheetToMap(metaSheet) : {};
+    }
 
     const resultados=[];
 
@@ -961,29 +897,25 @@
   }
 
   function applyData(){
-    if(!workbook&&!sheetData.length){alert('Por favor importe um arquivo .xlsx com as 7 abas, ou carregue pelo Supabase.');return;}
+    if(!workbook){alert('Por favor importe o arquivo .xlsx com as abas de resultados\n(Vendas, Agregados, Desconto, Google, Projeção, À vista).');return;}
+    const temMetas=Object.keys(supabaseMetas).length>0;
+    if(!temMetas){
+      const ok=confirm('As metas não foram carregadas do Supabase ainda.\nDeseja tentar carregar agora antes de aplicar?');
+      if(ok){loadMetasFromSupabase().then(()=>applyData());return;}
+    }
     try{
-      let resultados;
-      if(workbook){
-        resultados=calcularResultados(workbook);
-      } else {
-        // Dados CSV planos: converter arrays para objetos usando sheetHeaders
-        const objs=sheetData.map(r=>{const o={};sheetHeaders.forEach((h,i)=>o[h]=r[i]);return o;});
-        resultados=calcularResultadosFlat(objs);
-      }
-      if(!resultados.length){alert('Nenhum resultado calculado. Verifique se as abas/colunas estão corretas.');return;}
+      const resultados=calcularResultados(workbook);
+      if(!resultados.length){alert('Nenhum resultado calculado. Verifique se as abas de resultados estão corretas.');return;}
       renderRanking(resultados);
       setLastUpdate();
       showPageRail('rank');
-      alert(`✓ Ranking atualizado com sucesso!\n${resultados.filter(r=>r.grupo).length} lojas processadas em ${[...new Set(resultados.map(r=>r.grupo).filter(Boolean))].length} grupos.`);
+      const fonte=temMetas?'metas do Supabase':'metas do próprio arquivo';
+      alert(`✓ Ranking atualizado com sucesso!\n${resultados.filter(r=>r.grupo).length} lojas · ${fonte}`);
     }catch(err){
       alert('Erro ao processar planilha: '+err.message);
       console.error(err);
     }
   }
-
-  // Auto-carrega do Supabase ao abrir a página
-  window.addEventListener('load', () => loadFromSupabase());
 
   /* PRÊMIOS */
   function renderPremiosDisplay(){
@@ -1063,6 +995,9 @@
   function switchTab(el,tabId){document.querySelectorAll(".config-tab").forEach(t=>t.classList.remove("active"));document.querySelectorAll(".config-section").forEach(s=>s.classList.remove("active"));el.classList.add("active");document.getElementById(tabId).classList.add("active");}
 
   renderPremiosDisplay();
+
+  // Carrega metas do Supabase automaticamente ao abrir
+  loadMetasFromSupabase();
 
   /* ── TOOLTIP DE PONTOS EXTRAS ── */
   const ksTooltip = document.getElementById('ks-tooltip');
