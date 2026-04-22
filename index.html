@@ -135,6 +135,44 @@
     .col-neutral{color:#aaa;}
     .pts-total-cell{font-weight:900;font-size:13px;}
 
+
+    /* ── VALIDAÇÃO PRÉ-IMPORT ── */
+    #validacao-wrap{display:none;margin-bottom:24px;}
+    .val-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+    .val-title{font-size:16px;font-weight:900;color:#111;}
+    .val-period{font-size:11px;color:#aaa;margin-top:2px;}
+    .val-btns{display:flex;gap:10px;}
+    .val-confirm{padding:10px 28px;background:#0A0A0A;color:#C9A84C;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;letter-spacing:1px;text-transform:uppercase;transition:background .15s;font-family:inherit;}
+    .val-confirm:hover{background:#C9A84C;color:#0A0A0A;}
+    .val-cancel{padding:10px 18px;background:transparent;color:#bbb;border:1px solid #E8E4DC;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;transition:all .15s;font-family:inherit;}
+    .val-cancel:hover{border-color:#E24B4A;color:#C03030;}
+    .val-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px;}
+    .val-card{background:#fff;border:1px solid #E8E4DC;border-radius:8px;padding:12px 14px;text-align:center;}
+    .val-card-n{font-size:22px;font-weight:900;color:#111;}
+    .val-card-l{font-size:10px;color:#aaa;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-top:2px;}
+    .val-card.warn .val-card-n{color:#E24B4A;}
+    .val-table-wrap{background:#fff;border:1px solid #E8E4DC;border-radius:10px;overflow:hidden;}
+    .val-group-header{padding:8px 16px;background:#F7F5F0;border-bottom:1px solid #E8E4DC;font-size:10px;font-weight:700;color:#C9A84C;letter-spacing:2px;text-transform:uppercase;}
+    .val-table{width:100%;border-collapse:collapse;font-size:11px;}
+    .val-th{padding:7px 10px;text-align:left;font-size:9px;font-weight:700;color:#bbb;letter-spacing:1.5px;text-transform:uppercase;border-bottom:1px solid #F0EDE6;background:#FAFAF8;white-space:nowrap;}
+    .val-th.center{text-align:center;}
+    .val-td{padding:8px 10px;border-bottom:1px solid #F7F5F0;color:#333;vertical-align:middle;}
+    .val-td.center{text-align:center;}
+    tr:last-child .val-td{border-bottom:none;}
+    tr:hover .val-td{background:#FAFAF8;}
+    .val-ind{display:inline-block;width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+    .val-ind.ok{background:#3B9B1A;}
+    .val-ind.no{background:#E24B4A;}
+    .val-pts{font-size:16px;font-weight:900;color:#111;}
+    .val-pts.risco{color:#E24B4A;}
+    .val-name{font-weight:700;color:#111;font-size:12px;}
+    .val-loja{font-size:10px;color:#aaa;margin-top:1px;}
+    .val-inds-row{display:flex;gap:3px;flex-wrap:wrap;}
+    .val-ind-pill{font-size:8px;padding:1px 4px;border-radius:2px;font-weight:700;}
+    .val-ind-pill.ok{background:rgba(59,155,26,.1);color:#2E8010;border:0.5px solid rgba(59,155,26,.25);}
+    .val-ind-pill.no{background:rgba(226,75,74,.08);color:#C03030;border:0.5px solid rgba(226,75,74,.2);}
+    .val-risco-badge{font-size:9px;color:#E24B4A;font-weight:700;text-transform:uppercase;margin-top:2px;}
+
   </style>
 </head>
 <body>
@@ -270,6 +308,25 @@
           </div>
           <input type="file" id="planilha-input" style="display:none" accept=".xlsx,.xls" onchange="handleFile(this)">
           <div id="status-upload" class="status-bar"></div>
+
+          <!-- VALIDAÇÃO PRÉ-IMPORT -->
+          <div id="validacao-wrap">
+            <div class="val-header">
+              <div>
+                <div class="val-title">Validar antes de confirmar</div>
+                <div class="val-period" id="val-period-label">—</div>
+              </div>
+              <div class="val-btns">
+                <button class="val-cancel" onclick="cancelarValidacao()">Cancelar</button>
+                <button class="val-confirm" id="btn-confirmar" onclick="confirmarImport()">✓ Confirmar e publicar</button>
+              </div>
+            </div>
+            <div class="val-summary" id="val-summary"></div>
+            <div class="val-table-wrap">
+              <div style="overflow-x:auto;"><table class="val-table" id="val-table"></table></div>
+            </div>
+          </div>
+
           <div class="section-sep" style="margin-top:24px;">Apuração de indicadores</div>
           <div class="group-filter" id="apuracao-filter">
             <button class="gf-btn active" onclick="filtrarApuracao(this,'todos')">Todos</button>
@@ -873,23 +930,121 @@ function dragOver(e){e.preventDefault();document.getElementById('upload-zone').c
 function dragLeave(){document.getElementById('upload-zone').classList.remove('drag');}
 function dropFile(e){e.preventDefault();document.getElementById('upload-zone').classList.remove('drag');const f=e.dataTransfer.files[0];if(f)processFile(f);}
 
-function processFile(file){
-  statusMsg('status-upload','info','Processando planilha…');
-  const ext=file.name.split('.').pop().toLowerCase();
-  const reader=new FileReader();
-  reader.onload=async function(e){
-    workbook=XLSX.read(e.target.result,{type:'array',cellDates:false});
-    const resultados=calcularResultados(workbook);
-    if(!resultados.length){statusMsg('status-upload','err','Nenhuma loja encontrada. Verifique se os nomes batem com o cadastro.');return;}
-    currentResultados=resultados;
-    renderRanking(resultados);
-    showPageRail('rank');
+// Resultados pendentes de confirmação
+  let pendingResultados = null;
+
+  function processFile(file){
+    statusMsg('status-upload','info','Processando planilha…');
+    const reader=new FileReader();
+    reader.onload=function(e){
+      workbook=XLSX.read(e.target.result,{type:'array',cellDates:false});
+      const resultados=calcularResultados(workbook);
+      if(!resultados.length){statusMsg('status-upload','err','Nenhuma loja encontrada. Verifique se os nomes batem com o cadastro.');return;}
+      pendingResultados=resultados;
+      statusMsg('status-upload','ok','Planilha processada · revise os dados abaixo e confirme');
+      mostrarValidacao(resultados);
+    };
+    reader.readAsArrayBuffer(file);
+  }
+
+  function mostrarValidacao(resultados){
+    document.getElementById('validacao-wrap').style.display='block';
+    document.getElementById('upload-zone').style.opacity='0.4';
+    document.getElementById('upload-zone').style.pointerEvents='none';
+
+    // Período
+    let periodoLabel='—';
+    try{
+      const wsName=workbook.SheetNames.find(n=>n.toLowerCase().includes('venda')&&!n.toLowerCase().includes('proj'));
+      if(wsName){
+        const rows=XLSX.utils.sheet_to_json(workbook.Sheets[wsName],{header:1,defval:null});
+        if(rows.length>1){
+          const iso=excelDateToISO(rows[1][1]);
+          if(iso){const d=new Date(iso+'T12:00:00');periodoLabel=d.toLocaleString('pt-BR',{month:'long',year:'numeric'}).replace(/^./,c=>c.toUpperCase());}
+        }
+      }
+    }catch(e){}
+    document.getElementById('val-period-label').textContent=periodoLabel;
+
+    // Resumo
+    const totalLojas=resultados.length;
+    const grupos=[...new Set(resultados.map(r=>r.grupo).filter(Boolean))].length;
+    const emRisco=resultados.filter(r=>r.emRisco).length;
+    const mediaPts=(resultados.reduce((s,r)=>s+r.total,0)/totalLojas).toFixed(1);
+    document.getElementById('val-summary').innerHTML=`
+      <div class="val-card"><div class="val-card-n">${totalLojas}</div><div class="val-card-l">Lojas</div></div>
+      <div class="val-card"><div class="val-card-n">${grupos}</div><div class="val-card-l">Grupos</div></div>
+      <div class="val-card ${emRisco>0?'warn':''}"><div class="val-card-n">${emRisco}</div><div class="val-card-l">Em risco</div></div>
+      <div class="val-card"><div class="val-card-n">${mediaPts}</div><div class="val-card-l">Média pts</div></div>
+    `;
+
+    // Tabela agrupada por grupo, ordenada por pontos
+    const IND=['Meta','P.A','Ticket','Google','Baú','Cabeceira','Protetor','Travesseiro','Desconto','À vista'];
+    const sorted=[...resultados].sort((a,b)=>{
+      if(a.grupo!==b.grupo)return Number(a.grupo)-Number(b.grupo);
+      if(b.total!==a.total)return b.total-a.total;
+      return (b.meta_pct||0)-(a.meta_pct||0);
+    });
+
+    let html='<thead><tr>'
+      +'<th class="val-th" style="width:50px">Pos.</th>'
+      +'<th class="val-th">Gerente / Loja</th>'
+      +'<th class="val-th center" colspan="10">Indicadores</th>'
+      +'<th class="val-th center">Pts</th>'
+      +'<th class="val-th center">Status</th>'
+      +'</tr></thead><tbody>';
+
+    let lastGrupo=null, posGrupo=0;
+    sorted.forEach(r=>{
+      if(r.grupo!==lastGrupo){
+        lastGrupo=r.grupo; posGrupo=0;
+        html+=`<tr><td colspan="14" style="padding:6px 10px;background:#F7F5F0;font-size:9px;font-weight:700;color:#C9A84C;letter-spacing:2px;text-transform:uppercase;border-bottom:1px solid #E8E4DC;">Grupo ${r.grupo}</td></tr>`;
+      }
+      posGrupo++;
+      const posLabel=posGrupo<=3?['🥇','🥈','🥉'][posGrupo-1]:posGrupo;
+      const pills=IND.map(k=>`<span class="val-ind-pill ${r.ind[k]?.ok?'ok':'no'}">${k==='Travesseiro'?'Trav':k==='Cabeceira'?'Cab':k==='À vista'?'Vista':k}</span>`).join('');
+      html+=`<tr>
+        <td class="val-td center" style="font-size:14px">${posLabel}</td>
+        <td class="val-td">
+          <div class="val-name">${formatName(r.nome||r.loja)}</div>
+          <div class="val-loja">${r.loja}</div>
+          ${r.emRisco?'<div class="val-risco-badge">⚠ Risco · Desconto</div>':''}
+        </td>
+        <td class="val-td center" colspan="10"><div class="val-inds-row" style="justify-content:center">${pills}</div></td>
+        <td class="val-td center"><span class="val-pts${r.emRisco?' risco':''}">${r.total}</span>${r.pontosExtras>0?`<div style="font-size:9px;color:#C9A84C;font-weight:700">+${r.pontosExtras}</div>`:''}</td>
+        <td class="val-td center">${r.emRisco?'<span style="color:#E24B4A;font-size:10px;font-weight:700">Risco</span>':'<span style="color:#2E8010;font-size:10px;font-weight:700">OK</span>'}</td>
+      </tr>`;
+    });
+    html+='</tbody>';
+    document.getElementById('val-table').innerHTML=html;
+  }
+
+  function cancelarValidacao(){
+    pendingResultados=null;
+    document.getElementById('validacao-wrap').style.display='none';
+    document.getElementById('upload-zone').style.opacity='';
+    document.getElementById('upload-zone').style.pointerEvents='';
+    document.getElementById('planilha-input').value='';
+    statusMsg('status-upload','info','Importação cancelada.');
+  }
+
+  async function confirmarImport(){
+    if(!pendingResultados)return;
+    const btn=document.getElementById('btn-confirmar');
+    btn.disabled=true; btn.textContent='Publicando…';
+    currentResultados=pendingResultados;
+    renderRanking(currentResultados);
     renderApuracao();
-    // Salva no Supabase (aguarda e mostra resultado)
-    await saveToSupabase(resultados);
-  };
-  reader.readAsArrayBuffer(file);
-}
+    await saveToSupabase(currentResultados);
+    // Limpa validação
+    pendingResultados=null;
+    document.getElementById('validacao-wrap').style.display='none';
+    document.getElementById('upload-zone').style.opacity='';
+    document.getElementById('upload-zone').style.pointerEvents='';
+    document.getElementById('planilha-input').value='';
+    btn.disabled=false; btn.textContent='✓ Confirmar e publicar';
+    showPageRail('rank');
+  }
 
 // ─── Prêmios ──────────────────────────────────────────────────────────────────
 function renderPremiosDisplay(){
