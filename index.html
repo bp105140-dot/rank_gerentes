@@ -611,7 +611,7 @@
         <td class="apuracao-td ${cls(i['P.A']?.ok)}">${fmtDif('P.A')}</td>
         <td class="apuracao-td ${cls(i['Ticket']?.ok)}">${fmtDif('Ticket')}</td>
         <td class="apuracao-td ${cls(i['Google']?.ok)}">${fmtDif('Google')}</td>
-        <td class="apuracao-td ${cls(i['Meta']?.ok)}">${fmtDif('Meta')}</td>
+        <td class="apuracao-td ${cls(i['Meta']?.ok)}">${i['Meta']?.val!=null ? i['Meta'].val.toFixed(1)+'%' : '—'}</td>
         <td class="apuracao-td ${cls(i['Baú']?.ok)}">${fmtDif('Baú')}</td>
         <td class="apuracao-td ${cls(i['Cabeceira']?.ok)}">${fmtDif('Cabeceira')}</td>
         <td class="apuracao-td ${cls(i['Protetor']?.ok)}">${fmtDif('Protetor')}</td>
