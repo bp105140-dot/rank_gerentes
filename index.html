@@ -369,7 +369,8 @@
       </div>
       <div id="tab-premios" class="config-section">
         <div class="premio-config-grid" id="premio-config-grid"></div>
-        <button class="save-btn" onclick="savePremios()">Salvar prêmios</button>
+        <button class="save-btn" id="btn-save-premios" onclick="savePremios()">Salvar prêmios</button>
+
       </div>
       <div id="tab-dados" class="config-section">
         <div class="dados-wrap">
@@ -949,7 +950,30 @@
     document.getElementById("premio-config-grid").innerHTML=Object.entries(premios).map(([g,p])=>`<div class="premio-config-card"><div class="pc-config-grupo">Grupo ${g}</div><div><div class="pc-field-label">Ícone</div><div class="emoji-row" id="emoji-row-${g}">${emojis.map(e=>`<span class="emoji-opt ${e===p.emoji?"selected":""}" onclick="selEmoji('${g}','${e}',this)">${e}</span>`).join("")}</div></div><div class="pc-div-config"></div><div><div class="pc-field-label">Nome</div><input class="pc-input" type="text" value="${p.nome}" onchange="premios['${g}'].nome=this.value"/></div><div><div class="pc-field-label">Descrição</div><input class="pc-input" type="text" value="${p.desc}" onchange="premios['${g}'].desc=this.value"/></div><div><div class="pc-field-label">Valor</div><input class="pc-input" type="text" value="${p.valor}" onchange="premios['${g}'].valor=this.value"/></div></div>`).join("");
   }
   function selEmoji(g,e,el){premios[g].emoji=e;document.querySelectorAll(`#emoji-row-${g} .emoji-opt`).forEach(x=>x.classList.remove("selected"));el.classList.add("selected");}
-  function savePremios(){renderPremiosDisplay();alert("Prêmios salvos!");}
+  async function savePremios(){
+  const btn=document.getElementById('btn-save-premios');
+  if(btn){btn.disabled=true;btn.textContent='Salvando...';}
+  try{
+    const rows=Object.entries(premios).map(([grupo,p])=>({
+      grupo:Number(grupo),
+      emoji:p.emoji,
+      nome:p.nome,
+      descricao:p.desc,
+      valor:p.valor,
+    }));
+    const {error}=await db.from('ks_premios').upsert(rows,{onConflict:'grupo'});
+    if(error)throw error;
+    renderPremiosDisplay();
+    toast('✓ Prêmios salvos!','ok');
+  }catch(e){
+    console.error('[savePremios]',e);
+    toast('Erro ao salvar prêmios: '+e.message,'err');
+    alert('Erro ao salvar prêmios no Supabase:\n\n'+e.message);
+  }finally{
+    if(btn){btn.disabled=false;btn.textContent='Salvar prêmios';}
+  }
+}
+
 
   /* GERENTES */
   function renderConfig(f){
