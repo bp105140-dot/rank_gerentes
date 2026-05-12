@@ -738,7 +738,7 @@
 
       // Projeção: Meta % = Proj.Venda / Meta venda
       const proj_venda = pr ? numVal(pr[3]) : null;
-      const meta_pct   = (proj_venda&&meta_venda&&meta_venda>0) ? (proj_venda/meta_venda)*100 : null;
+      const meta_pct   = (proj_venda&&meta_venda&&meta_venda>0) ? (proj_venda/meta_venda) : null;
 
       // Google: Qtde.Realizado / Qtde.Pedidos
       const go_ped  = go ? numVal(go[3]) : null;
