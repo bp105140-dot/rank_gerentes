@@ -11,7 +11,7 @@ export default function middleware(request) {
     const [user, password] = atob(basicAuth).split(':');
 
     // Troque 'admin' e 'senha123' pelo usuário e senha que você quiser
-    if (user === 'admin' && password === 'senha123') {
+    if (user === 'admin' && password === 'Levy084611#') {
       return new Response(null, {
         headers: { 'x-middleware-next': '1' } // Permite o acesso
       });
