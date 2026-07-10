@@ -1119,29 +1119,29 @@ function _showPageRail(id){
     _toastTimer=setTimeout(()=>{el.style.opacity='0';setTimeout(()=>el.style.display='none',300);},type==='err'?6000:3000);
   }
 
-  // // ── Senha ──────────────────────────────────────────────────────────────────
-  // let configUnlocked=false;
-  // function requirePwd(cb){
-  //   if(configUnlocked){cb();return;}
-  //   const ov=document.getElementById('pwd-overlay');
-  //   ov.style.display='flex';
-  //   document.getElementById('pwd-input').value='';
-  //   document.getElementById('pwd-error').textContent='';
-  //   setTimeout(()=>document.getElementById('pwd-input').focus(),50);
-  //   ov._cb=cb;
-  // }
-  // function checkPwd(){
-  //   if(document.getElementById('pwd-input').value==='@kingstar2026!'){
-  //     configUnlocked=true;
-  //     document.getElementById('pwd-overlay').style.display='none';
-  //     document.getElementById('pwd-overlay')._cb?.();
-  //   }else{
-  //     document.getElementById('pwd-error').textContent='Senha incorreta.';
-  //     document.getElementById('pwd-input').value='';
-  //     document.getElementById('pwd-input').focus();
-  //   }
-  // }
-  // function closePwd(){document.getElementById('pwd-overlay').style.display='none';}
+  // ── Senha ──────────────────────────────────────────────────────────────────
+  let configUnlocked=false;
+  function requirePwd(cb){
+    if(configUnlocked){cb();return;}
+    const ov=document.getElementById('pwd-overlay');
+    ov.style.display='flex';
+    document.getElementById('pwd-input').value='';
+    document.getElementById('pwd-error').textContent='';
+    setTimeout(()=>document.getElementById('pwd-input').focus(),50);
+    ov._cb=cb;
+  }
+  function checkPwd(){
+    if(document.getElementById('pwd-input').value==='@kingstar2026!'){
+      configUnlocked=true;
+      document.getElementById('pwd-overlay').style.display='none';
+      document.getElementById('pwd-overlay')._cb?.();
+    }else{
+      document.getElementById('pwd-error').textContent='Senha incorreta.';
+      document.getElementById('pwd-input').value='';
+      document.getElementById('pwd-input').focus();
+    }
+  }
+  function closePwd(){document.getElementById('pwd-overlay').style.display='none';}
 
   // ── excelDateToISO ─────────────────────────────────────────────────────────
   function excelDateToISO(v){
