@@ -820,6 +820,7 @@
     const grupos=['1','2','3','4','5'];
     for(const g of grupos){
       const elegiveisProjecao=resultados.filter(r=>r.grupo===g&&r.pontosBase>=5&&r.meta_pct!=null);
+      const elegiveisProjecao=resultados.filter(r=>r.grupo===g&&r.pontosBase>=5&&r.meta_pct!=null&&r.meta_pct>=100);
       if(!elegiveisProjecao.length) continue;
       const best=elegiveisProjecao.reduce((a,b)=>(b.meta_pct>a.meta_pct?b:a));
       const tied=elegiveisProjecao.filter(r=>r.meta_pct===best.meta_pct);
@@ -875,6 +876,7 @@
 
     for(const g of grupos){
       const elegiveis=resultados.filter(r=>r.grupo===g&&r.pontosBase>=5&&r.meta_pct!=null);
+      const elegiveis=resultados.filter(r=>r.grupo===g&&r.pontosBase>=5&&r.meta_pct!=null&&r.meta_pct>=100);
       if(!elegiveis.length) continue;
       const best=elegiveis.reduce((a,b)=>(b.meta_pct>a.meta_pct?b:a));
       const tied=elegiveis.filter(r=>r.meta_pct===best.meta_pct);
