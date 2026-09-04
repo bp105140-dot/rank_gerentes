@@ -796,16 +796,9 @@
       const pontosBase = Object.values(ind).filter(i=>i.ok).length;
       const emRisco    = !desc_ok && desc_pct!=null;
 
-      // Pontos extras por meta — só se >= 5 indicadores entregues
+      // Pontos extras: calculados depois por melhor projeção e Top 1 por grupo
       let pontosExtras=0;
       const extrasInfo=[];
-      if(pontosBase>=5 && meta_pct!=null && meta_pct>100){
-        const ext=Math.floor((meta_pct-100)/5);
-        if(ext>0){
-          pontosExtras+=ext;
-          extrasInfo.push({ind:`Meta mensal em ${meta_pct.toFixed(1)}%`,pct:`+${ext} extra${ext>1?'s':''}`});
-        }
-      }
 
       // Encontrar config de loja (grupo e nome do gerente)
       const lojaConfig = lojas.find(l=>{
@@ -823,9 +816,22 @@
       resultados.push({loja,nome,inic,foto,grupo,ind,pontosBase,pontosExtras,extrasInfo,total:pontosBase+pontosExtras,emRisco,meta_pct});
     }
 
-    // Top 1 por grupo por indicador — bônus extra (só se >= 5 indicadores entregues)
+    // Melhor projeção por grupo — bônus extra único (só se >= 5 indicadores entregues)
     const grupos=['1','2','3','4','5'];
-    const indKeys=['Meta','Ticket','Google','P.A','Baú','Cabeceira','Travesseiro','Protetor','À vista'];
+    for(const g of grupos){
+      const elegiveisProjecao=resultados.filter(r=>r.grupo===g&&r.pontosBase>=5&&r.meta_pct!=null);
+      if(!elegiveisProjecao.length) continue;
+      const best=elegiveisProjecao.reduce((a,b)=>(b.meta_pct>a.meta_pct?b:a));
+      const tied=elegiveisProjecao.filter(r=>r.meta_pct===best.meta_pct);
+      if(tied.length===1){
+        best.pontosExtras+=1;
+        best.total+=1;
+        best.extrasInfo.push({ind:`Melhor projeção do Grupo ${g} (${best.meta_pct.toFixed(1)}%)`,pct:'+1 bônus'});
+      }
+    }
+
+    // Top 1 por grupo por indicador — bônus extra (só se >= 5 indicadores entregues)
+    const indKeys=['Ticket','Google','P.A','Baú','Cabeceira','Travesseiro','Protetor','À vista'];
     for(const g of grupos){
       const grp=resultados.filter(r=>r.grupo===g&&r.pontosBase>=5);
       for(const ik of indKeys){
