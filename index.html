@@ -819,7 +819,6 @@
     // Melhor projeção por grupo — bônus extra único (só se >= 5 indicadores entregues)
     const grupos=['1','2','3','4','5'];
     for(const g of grupos){
-      const elegiveisProjecao=resultados.filter(r=>r.grupo===g&&r.pontosBase>=5&&r.meta_pct!=null);
       const elegiveisProjecao=resultados.filter(r=>r.grupo===g&&r.pontosBase>=5&&r.meta_pct!=null&&r.meta_pct>=100);
       if(!elegiveisProjecao.length) continue;
       const best=elegiveisProjecao.reduce((a,b)=>(b.meta_pct>a.meta_pct?b:a));
@@ -875,7 +874,6 @@
     });
 
     for(const g of grupos){
-      const elegiveis=resultados.filter(r=>r.grupo===g&&r.pontosBase>=5&&r.meta_pct!=null);
       const elegiveis=resultados.filter(r=>r.grupo===g&&r.pontosBase>=5&&r.meta_pct!=null&&r.meta_pct>=100);
       if(!elegiveis.length) continue;
       const best=elegiveis.reduce((a,b)=>(b.meta_pct>a.meta_pct?b:a));
@@ -1253,6 +1251,23 @@ function _showPageRail(id){
     }
   }
 
+  async function salvarNormalizacaoResultados(periodoId,resultados){
+    const rows=resultados
+      .filter(r=>r.lojaId)
+      .map(r=>({
+        periodo_id:periodoId,
+        loja_id:r.lojaId,
+        pontos_extras:r.pontosExtras,
+        pontos_total:r.total,
+        extras_info:r.extrasInfo,
+      }));
+
+    if(!rows.length) return;
+
+    const{error}=await db.from('ks_resultados').upsert(rows,{onConflict:'periodo_id,loja_id'});
+    if(error) console.warn('[salvarNormalizacaoResultados]',error.message);
+  }
+
   // ── applyData com Supabase ─────────────────────────────────────────────────
   // Sobrescreve o applyData original do arquivo
   async function applyData(){
@@ -1309,12 +1324,13 @@ function _showPageRail(id){
         const{data:rankDB}=await db.from('ks_ranking').select('*').eq('periodo_id',periodo.id);
         if(rankDB?.length){
           const res=rankDB.map(row=>({
-            loja:row.codigo_loja,nome:row.gerente_nome,inic:row.iniciais,foto:row.foto_url||null,grupo:row.grupo,
+            lojaId:row.loja_id,loja:row.codigo_loja,nome:row.gerente_nome,inic:row.iniciais,foto:row.foto_url||null,grupo:row.grupo,
             ind:{'Meta':{ok:row.ind_meta,val:null},'P.A':{ok:row.ind_pa,val:null},'Ticket':{ok:row.ind_ticket,val:null},'Google':{ok:row.ind_google,val:null},'Baú':{ok:row.ind_bau,val:null},'Cabeceira':{ok:row.ind_cabeceira,val:null},'Protetor':{ok:row.ind_protetor,val:null},'Travesseiro':{ok:row.ind_travesseiro,val:null},'Desconto':{ok:row.ind_desconto,val:null},'À vista':{ok:row.ind_avista,val:null}},
             pontosBase:row.pontos_base,pontosExtras:row.pontos_extras,total:row.pontos_total,
             emRisco:row.em_risco,meta_pct:row.meta_pct,extrasInfo:row.extras_info||[],
           }));
           normalizarExtrasProjecao(res);
+          await salvarNormalizacaoResultados(periodo.id,res);
           renderRanking(res);
           document.getElementById('last-update').textContent=periodo.nome+' · Top 7 por grupo';
         }
