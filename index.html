@@ -470,7 +470,8 @@
     {id:51,loja:"59 - ARICANDUVA",grupo:"4",nome:"ELAINE",iniciais:"EN"},
     {id:52,loja:"60 - SHOPPING DOM PEDRO",grupo:"5",nome:"EDILSON",iniciais:"ED"},
     {id:53,loja:"61 - VILA MASCOTE",grupo:"1",nome:"EVILASIO",iniciais:"EV"},
-    {id:54,loja:"62 - AUTODROMO",grupo:"1",nome:"RODRIGO",iniciais:"RD"}
+    {id:54,loja:"62 - AUTODROMO",grupo:"1",nome:"RODRIGO",iniciais:"RD"},
+    {id:55,loja:"63 - GRAJAU",grupo:"2",nome:"",iniciais:""}
   ];
   const fotos={};
   const premios={
@@ -1294,10 +1295,14 @@ function _showPageRail(id){
     const btn=document.getElementById('btn-save-gerentes');
     if(btn){btn.disabled=true;btn.textContent='Salvando…';}
     try{
-      for(const l of lojas){
-        const{error}=await db.from('ks_lojas').update({nome:l.nome,iniciais:l.iniciais,grupo:l.grupo}).eq('codigo_loja',l.loja);
-        if(error)throw error;
-      }
+      const rows=lojas.map(l=>({
+        codigo_loja:l.loja,
+        nome:l.nome,
+        iniciais:l.iniciais,
+        grupo:l.grupo,
+      }));
+      const{error}=await db.from('ks_lojas').upsert(rows,{onConflict:'codigo_loja'});
+      if(error)throw error;
       toast('✓ Gerentes salvos!','ok');
     }catch(e){toast('Erro: '+e.message,'err');}
     if(btn){btn.disabled=false;btn.textContent='Salvar gerentes';}
@@ -1310,7 +1315,22 @@ function _showPageRail(id){
       if(lojasDB?.length){
         lojasDB.forEach(l=>{
           const idx=lojas.findIndex(x=>x.loja.trim().toUpperCase()===l.codigo_loja.trim().toUpperCase());
-          if(idx>=0){lojas[idx].nome=l.nome;lojas[idx].iniciais=l.iniciais;lojas[idx].grupo=l.grupo;if(l.foto_url)fotos[lojas[idx].id]=l.foto_url;}
+          if(idx>=0){
+            lojas[idx].nome=l.nome;
+            lojas[idx].iniciais=l.iniciais;
+            lojas[idx].grupo=l.grupo;
+            if(l.foto_url)fotos[lojas[idx].id]=l.foto_url;
+          }else{
+            const id=Math.max(0,...lojas.map(x=>x.id))+1;
+            lojas.push({
+              id,
+              loja:l.codigo_loja,
+              grupo:l.grupo||'',
+              nome:l.nome||'',
+              iniciais:l.iniciais||'',
+            });
+            if(l.foto_url)fotos[id]=l.foto_url;
+          }
         });
       }
       const{data:premiosDB}=await db.from('ks_premios').select('*');
