@@ -474,6 +474,15 @@
     {id:55,loja:"63 - GRAJAU",grupo:"2",nome:"",iniciais:""}
   ];
   const fotos={};
+  function nomeGerenteValido(nome){
+    const n=String(nome||'').trim();
+    return n && !/^teste$/i.test(n);
+  }
+  function iniciaisDeNome(nome){
+    const partes=String(nome||'').trim().split(/\s+/).filter(Boolean);
+    if(!partes.length) return '';
+    return partes.filter((_,i,a)=>i===0||i===a.length-1).map(p=>p[0].toUpperCase()).join('');
+  }
   const premios={
     1:{emoji:"✈️",nome:"Viagem Internacional",desc:"Casal · Destino surpresa · All inclusive",valor:"Grand Prix 🏆"},
     2:{emoji:"📺",nome:"Smart TV 65\"",desc:"Eletrodoméstico · Entrega em domicílio",valor:"R$ 4.500"},
@@ -1316,18 +1325,21 @@ function _showPageRail(id){
         lojasDB.forEach(l=>{
           const idx=lojas.findIndex(x=>x.loja.trim().toUpperCase()===l.codigo_loja.trim().toUpperCase());
           if(idx>=0){
-            lojas[idx].nome=l.nome;
-            lojas[idx].iniciais=l.iniciais;
+            if(nomeGerenteValido(l.nome)){
+              lojas[idx].nome=l.nome;
+              lojas[idx].iniciais=l.iniciais||iniciaisDeNome(l.nome);
+            }
             lojas[idx].grupo=l.grupo;
             if(l.foto_url)fotos[lojas[idx].id]=l.foto_url;
           }else{
             const id=Math.max(0,...lojas.map(x=>x.id))+1;
+            const nome=nomeGerenteValido(l.nome)?l.nome:'';
             lojas.push({
               id,
               loja:l.codigo_loja,
               grupo:l.grupo||'',
-              nome:l.nome||'',
-              iniciais:l.iniciais||'',
+              nome,
+              iniciais:l.iniciais||iniciaisDeNome(nome),
             });
             if(l.foto_url)fotos[id]=l.foto_url;
           }
@@ -1343,12 +1355,18 @@ function _showPageRail(id){
         document.getElementById('period-year').textContent=d.getFullYear();
         const{data:rankDB}=await db.from('ks_ranking').select('*').eq('periodo_id',periodo.id);
         if(rankDB?.length){
-          const res=rankDB.map(row=>({
-            lojaId:row.loja_id,loja:row.codigo_loja,nome:row.gerente_nome,inic:row.iniciais,foto:row.foto_url||null,grupo:row.grupo,
-            ind:{'Meta':{ok:row.ind_meta,val:null},'P.A':{ok:row.ind_pa,val:null},'Ticket':{ok:row.ind_ticket,val:null},'Google':{ok:row.ind_google,val:null},'Baú':{ok:row.ind_bau,val:null},'Cabeceira':{ok:row.ind_cabeceira,val:null},'Protetor':{ok:row.ind_protetor,val:null},'Travesseiro':{ok:row.ind_travesseiro,val:null},'Desconto':{ok:row.ind_desconto,val:null},'À vista':{ok:row.ind_avista,val:null}},
-            pontosBase:row.pontos_base,pontosExtras:row.pontos_extras,total:row.pontos_total,
-            emRisco:row.em_risco,meta_pct:row.meta_pct,extrasInfo:row.extras_info||[],
-          }));
+          const res=rankDB.map(row=>{
+            const lojaConfig=lojas.find(x=>x.loja.trim().toUpperCase()===String(row.codigo_loja||'').trim().toUpperCase());
+            const nome=nomeGerenteValido(row.gerente_nome)
+              ? row.gerente_nome
+              : (nomeGerenteValido(lojaConfig?.nome)?lojaConfig.nome:row.codigo_loja);
+            return{
+              lojaId:row.loja_id,loja:row.codigo_loja,nome,inic:row.iniciais||iniciaisDeNome(nome),foto:row.foto_url||null,grupo:row.grupo,
+              ind:{'Meta':{ok:row.ind_meta,val:null},'P.A':{ok:row.ind_pa,val:null},'Ticket':{ok:row.ind_ticket,val:null},'Google':{ok:row.ind_google,val:null},'Baú':{ok:row.ind_bau,val:null},'Cabeceira':{ok:row.ind_cabeceira,val:null},'Protetor':{ok:row.ind_protetor,val:null},'Travesseiro':{ok:row.ind_travesseiro,val:null},'Desconto':{ok:row.ind_desconto,val:null},'À vista':{ok:row.ind_avista,val:null}},
+              pontosBase:row.pontos_base,pontosExtras:row.pontos_extras,total:row.pontos_total,
+              emRisco:row.em_risco,meta_pct:row.meta_pct,extrasInfo:row.extras_info||[],
+            };
+          });
           normalizarExtrasProjecao(res);
           await salvarNormalizacaoResultados(periodo.id,res);
           renderRanking(res);
