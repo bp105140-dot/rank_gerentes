@@ -1,5 +1,5 @@
 export const config = {
-  // O asterisco protege todas as rotas e arquivos do site
+  // O asterisco protege todas as rotas e arquivos do site.
   matcher: '/:path*',
 };
 
