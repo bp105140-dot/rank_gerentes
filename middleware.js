@@ -25,7 +25,7 @@ export default function middleware(request) {
       'WWW-Authenticate': 'Basic realm="Área Restrita do Projeto"',
     },
   });
-// }
+ }
 
 
 //teste commit
